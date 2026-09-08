@@ -160,9 +160,12 @@ export function apply(ctx) {
   }
 
   const disposers = [ctx.webServer.register(route)]
-  ctx.effect(() => {
+  // cordis ctx.effect:setup runs immediately, its RETURN VALUE is the disposer —
+  // single-layer arrow would dispose the route right after registering it.
+  ctx.effect(() => () => {
     for (const d of disposers) {
       try { d() } catch { /* noop */ }
     }
-  })
+    disposers.length = 0
+  }, 'dsh-session-notes: route cleanup')
 }
