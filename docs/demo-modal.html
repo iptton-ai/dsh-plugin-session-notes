@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>DSH Session Notes Demo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #ffffff; color: #111; }
+  .frame { display: grid; grid-template-columns: 220px 1fr; height: 100vh; overflow: hidden; }
+  .sidebar { background: #f7f7f8; border-right: .5px solid rgba(0,0,0,.08); padding: 14px 10px; font-size: 13px; }
+  .brand { font-weight: 700; font-size: 14px; margin-bottom: 18px; color: #333; }
+  .ws-group { color: #999; font-size: 11px; margin: 12px 6px 4px; }
+  .sess { padding: 7px 10px; border-radius: 8px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+  .sess.active { background: rgba(0,0,0,.06); color: #111; font-weight: 600; }
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: .5px solid rgba(0,0,0,.08); }
+  .crumb { font-size: 13px; font-weight: 600; }
+  .spacer { flex: 1; }
+  .flow { flex: 1; overflow-y: auto; padding: 26px 12%; display: flex; flex-direction: column; gap: 22px; }
+  .msg { max-width: 760px; font-size: 14px; line-height: 1.75; color: #1a1a1a; }
+  .msg .role { font-size: 11px; color: #999; margin-bottom: 6px; }
+  .msg p { margin-bottom: 10px; }
+  code { background: rgba(0,0,0,.05); border-radius: 4px; padding: 1px 5px; font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .composer { padding: 12px 12% 18px; }
+  .composer-box { border: .5px solid rgba(0,0,0,.14); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: #777; background: #fafafa; }
+
+  /* ===== plugin styles (verbatim from the plugin) ===== */
+  ::highlight(snote-hl){background-color:rgba(250,204,21,.34);text-decoration:underline;text-decoration-color:rgba(234,160,11,.85);text-decoration-thickness:2px;text-underline-offset:3px}
+  .snote-selbtn{position:absolute;z-index:60;transform:translateX(-50%);display:flex;align-items:center;gap:4px;height:30px;padding:0 12px;border-radius:8px;border:.5px solid var(--dsw-alias-border-l2,rgba(0,0,0,.12));background:var(--dsw-alias-bg-layer-1,#fff);color:var(--dsw-alias-label-primary,#111);font-size:12px;cursor:pointer;box-shadow:var(--dsw-elevation-panel,0 4px 14px rgba(0,0,0,.14))}
+  .snote-panel{position:fixed;top:10px;right:10px;bottom:10px;width:308px;z-index:55;display:flex;flex-direction:column;border-radius:12px;border:.5px solid var(--dsw-alias-border-l2,rgba(0,0,0,.12));background:var(--dsw-alias-bg-base,#fff);box-shadow:var(--dsw-elevation-prominent,0 12px 40px rgba(0,0,0,.22));overflow:hidden}
+  .snote-panel-head{display:flex;align-items:center;gap:8px;padding:12px 12px 8px}
+  .snote-panel-title{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary,#111)}
+  .snote-panel-sub{font-size:11px;color:var(--dsw-alias-label-tertiary,#999)}
+  .snote-new-btn{font:inherit;font-size:11px;padding:3px 10px;border-radius:8px;border:.5px solid rgba(234,160,11,.55);background:transparent;color:#b45309;cursor:pointer;white-space:nowrap}
+  .snote-panel-close{margin-left:auto;border:none;background:transparent;color:var(--dsw-alias-label-secondary,#666);font-size:13px;cursor:pointer;padding:4px 6px;border-radius:6px}
+  .snote-tabs{display:flex;gap:4px;padding:0 10px 8px;border-bottom:.5px solid var(--dsw-alias-border-l1,rgba(0,0,0,.08))}
+  .snote-tab{font:inherit;font-size:11px;padding:4px 9px;border-radius:999px;border:.5px solid var(--dsw-alias-border-l2,rgba(0,0,0,.12));background:transparent;color:var(--dsw-alias-label-secondary,#666);cursor:pointer;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+  .snote-tab-active{background:var(--dsw-alias-state-business-primary,#e0a010);border-color:transparent;color:#fff;font-weight:600}
+  .snote-list{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+  .snote-card{border:.5px solid var(--dsw-alias-border-l1,rgba(0,0,0,.08));border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--dsw-alias-bg-layer-1,#fafafa)}
+  .snote-card-quote{font-size:11px;line-height:1.55;color:var(--dsw-alias-label-secondary,#666);border-left:3px solid rgba(234,160,11,.55);padding-left:8px;max-height:72px;overflow:hidden}
+  .snote-card-note{font-size:12.5px;line-height:1.6;color:var(--dsw-alias-label-primary,#111);white-space:pre-wrap;word-break:break-word}
+  .snote-card-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;color:var(--dsw-alias-label-tertiary,#999)}
+  .snote-card-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .snote-mini{font:inherit;font-size:11px;padding:3px 10px;border-radius:6px;border:.5px solid var(--dsw-alias-border-l2,rgba(0,0,0,.12));background:transparent;color:var(--dsw-alias-label-secondary,#555);cursor:pointer;white-space:nowrap}
+  .snote-mini-send{color:#b45309;border-color:rgba(234,160,11,.5)}
+  .snote-mini-danger{color:#dc2626;border-color:#dc2626}
+  .snote-header-btn{font:inherit;font-size:12px;padding:4px 10px;border-radius:8px;border:.5px solid var(--dsw-alias-border-l2,rgba(0,0,0,.12));background:transparent;color:var(--dsw-alias-label-secondary,#555);cursor:pointer;white-space:nowrap}
+  .snote-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:80;padding:8px 18px;border-radius:10px;background:rgba(20,20,20,.9);color:#fff;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="sidebar">
+    <div class="brand">DeepSeek Harness</div>
+    <div class="ws-group">dsh</div>
+    <div class="sess active">为会话句子添加便签划线插件</div>
+    <div class="sess">ComfyUI 插件指示添加与会话切换…</div>
+    <div class="sess">检查定时任务 dsh 版本未升级原因</div>
+    <div class="ws-group">game</div>
+    <div class="sess">将深圳三年级课本融入游戏的玩法规划</div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <span class="crumb">为会话句子添加便签划线插件</span>
+      <span class="spacer"></span>
+      <button class="snote-header-btn">便签 · 3</button>
+    </div>
+    <div class="flow">
+      <div class="msg">
+        <div class="role">USER</div>
+        <p>帮我写个 dsh 插件,可以对 session 中某些句子进行选中添加划线,然后写个小便条。</p>
+      </div>
+      <div class="msg">
+        <div class="role">ASSISTANT</div>
+        <p>划线引擎的核心是 <strong id="hl-strong-1">CSS Custom Highlight API</strong>:用 Range 描述高亮区间,注册进 <code>CSS.highlights</code>,<span id="hl-inline-1">浏览器用 </span><strong id="hl-strong-2">::highlight 伪元素</strong>绘制样式。</p>
+        <p id="hl-para-1">这种方式完全不修改 DOM——不拆节点、不移节点,React 永远感知不到高亮的存在。</p>
+        <p>存储则落在 <code>~/.dsh/storages/session-notes/notes.json</code>,跨重启保留。</p>
+      </div>
+    </div>
+    <div class="composer">
+      <div class="composer-box">给 dsh 发送消息…</div>
+    </div>
+  </div>
+</div>
+
+<div class="snote-panel" style="display:none">
+  <div class="snote-panel-head">
+    <span class="snote-panel-title">会话便签</span>
+    <span class="snote-panel-sub">3 条</span>
+    <button class="snote-new-btn">＋ 新建</button>
+    <button class="snote-panel-close">✕</button>
+  </div>
+  <div class="snote-tabs">
+    <button class="snote-tab">全部 3</button>
+    <button class="snote-tab snote-tab-active">dsh 3</button>
+    <button class="snote-tab">本会话 2</button>
+  </div>
+  <div class="snote-list">
+    <div class="snote-card">
+      <div class="snote-card-quote">「CSS Custom Highlight API」</div>
+      <div class="snote-card-note">零 DOM 修改是关键,React 重渲染不会破坏高亮</div>
+      <div class="snote-card-meta"><span>本会话</span><span>9-8 13:52</span></div>
+      <div class="snote-card-actions">
+        <button class="snote-mini">定位</button>
+        <button class="snote-mini snote-mini-send">发送到对话框</button>
+        <button class="snote-mini">编辑</button>
+        <button class="snote-mini snote-mini-danger">删除</button>
+      </div>
+    </div>
+    <div class="snote-card">
+      <div class="snote-card-quote">「浏览器用 ::highlight 伪元素」</div>
+      <div class="snote-card-note">跨加粗/代码边界的选区也能无缝高亮</div>
+      <div class="snote-card-meta"><span>本会话</span><span>9-8 13:40</span></div>
+      <div class="snote-card-actions">
+        <button class="snote-mini">定位</button>
+        <button class="snote-mini snote-mini-send">发送到对话框</button>
+        <button class="snote-mini">编辑</button>
+        <button class="snote-mini snote-mini-danger">删除</button>
+      </div>
+    </div>
+    <div class="snote-card">
+      <div class="snote-card-quote">「这种方式完全不修改 DOM…」</div>
+      <div class="snote-card-note">这个目录下所有会话都能看到这条</div>
+      <div class="snote-card-meta"><span>dsh</span><span>9-8 11:20</span></div>
+      <div class="snote-card-actions">
+        <button class="snote-mini snote-mini-send">发送到对话框</button>
+        <button class="snote-mini">编辑</button>
+        <button class="snote-mini snote-mini-danger">删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  // register real CSS Custom Highlights over the demo text (same engine as the plugin)
+  const hl = new Highlight()
+  function mark(el, start, end) {
+    const text = Array.from(el.childNodes).find(n => n.nodeType === 3)
+    const r = document.createRange()
+    r.setStart(text, start); r.setEnd(text, end)
+    hl.add(r)
+  }
+  mark(document.getElementById('hl-strong-1'), 0, 24)          // CSS Custom Highlight API
+  const s2b = document.getElementById('hl-strong-2')
+  mark(s2b, 0, 12)                                            // ::highlight 伪元素 (bold-text span)
+  mark(s2, 0, 4)                                              // 浏览器用 — adjacent plain-text node
+  mark(document.getElementById('hl-para-1'), 5, 16)             // 完全不修改 DOM
+  CSS.highlights.set('snote-hl', hl)
+</script>
+<div style='position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;padding:24px'>
+<div style='width:520px;max-height:80vh;overflow:auto;border-radius:12px;border:.5px solid rgba(0,0,0,.12);background:#fff;box-shadow:0 12px 40px rgba(0,0,0,.22);padding:16px;display:flex;flex-direction:column;gap:10px;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif'>
+<div style='font-size:14px;font-weight:600;color:#111'>便签</div>
+<div style='font-size:12px;line-height:1.6;color:#666;background:rgba(0,0,0,.04);border-radius:8px;padding:8px 10px;border-left:3px solid rgba(234,160,11,.6)'>「CSS Custom Highlight API」</div>
+<div style='font-size:13px;line-height:1.7;color:#111;white-space:pre-wrap;background:rgba(0,0,0,.04);border-radius:8px;padding:12px'>零 DOM 修改是关键:高亮注册在 CSS Custom Highlight API 上,React 重渲染、流式输出、markdown 重新解析都不会破坏划线。</div>
+<div style='display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap'>
+<button style='font-size:12px;padding:6px 14px;border-radius:8px;border:.5px solid #dc2626;background:#fff;color:#dc2626;cursor:pointer'>删除</button>
+<button style='font-size:12px;padding:6px 14px;border-radius:8px;border:.5px solid rgba(234,160,11,.55);background:#fff;color:#b45309;cursor:pointer;margin-left:auto'>发送到对话框</button>
+<button style='font-size:12px;padding:6px 14px;border-radius:8px;border:.5px solid rgba(0,0,0,.14);background:#fafafa;color:#111;cursor:pointer'>编辑</button>
+<button style='font-size:12px;padding:6px 14px;border-radius:8px;border:1px solid transparent;background:#e0a010;color:#fff;cursor:pointer;font-weight:600'>关闭</button>
+</div></div></div>
+</body>
+</html>

@@ -23,7 +23,32 @@ Highlight any sentence in your DeepSeek Harness (DSH) conversation, attach a sti
 
 ## Install
 
-This is a **dynamic Cordis plugin** for DSH. It runs in your current `dsh web` process — no build step, no npm.
+Two forms are supported: **A. resident profile plugin**(常驻,重启后仍在,推荐)and **B. dynamic cordis package**(动态,免装即用,重启即失)。
+
+### A. Resident — web profile plugin
+
+1. Clone this repo anywhere on disk.
+2. Link it into your web profile and install:
+
+   ```bash
+   cd ~/.dsh/profiles/web
+   # package.json → "dependencies": { "dsh-session-notes": "link:<abs path to this repo's resident package>" }
+   pnpm install
+   ```
+
+3. Append to `~/.dsh/profiles/web/cordis.patch.yml`:
+
+   ```yaml
+   - insert:
+       - id: session-notes
+         name: 'dsh-session-notes'
+   ```
+
+4. Restart `dsh web`. The host half serves `/session-notes/api/*`; the client half is picked up via the package's `dsh.client` declaration and bundled for every page load (UI survives refresh).
+
+### B. Dynamic — cordis_define
+
+Runs in the current `dsh web` process — no build step, no npm.
 
 1. Clone or download this repo.
 2. Open a DSH session (创造模式 / cordis preset — the one with `cordis_define` / `cordis_run` tools) and ask the agent:

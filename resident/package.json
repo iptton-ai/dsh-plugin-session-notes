@@ -1,0 +1,19 @@
+{
+  "name": "dsh-session-notes",
+  "version": "1.0.0",
+  "description": "Highlight & annotate DSH conversations with sticky notes (划线便签)",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "license": "MIT"
+}
