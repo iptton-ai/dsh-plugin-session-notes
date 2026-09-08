@@ -32,7 +32,7 @@ Two forms are supported: **A. resident profile plugin**(常驻,重启后仍在,�
 
    ```bash
    cd ~/.dsh/profiles/web
-   # package.json → "dependencies": { "dsh-session-notes": "link:<abs path to this repo's resident package>" }
+   # package.json → "dependencies": { "dsh-session-notes": "link:<abs path to this repo>" }
    pnpm install
    ```
 
