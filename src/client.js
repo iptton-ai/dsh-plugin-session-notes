@@ -559,6 +559,12 @@ return {
         const saved = await save()
         if (saved) sendToComposer(saved)
       }
+      // NEW mode: send the quote straight to the composer WITHOUT saving a note.
+      const sendNewOnly = () => {
+        sendToComposer({ id: '', quote: editing.quote, note: note.trim() })
+        if (editing.mode === 'new') clearBrowserSelection()
+        close()
+      }
 
       const enterEdit = () => {
         S.editing = { mode: 'edit', id: editing.id, quote: editing.quote, text: editing.text, from: 'view' }
@@ -633,6 +639,9 @@ return {
           }),
           React.createElement('div', { className: 'snote-modal-actions' },
             React.createElement('button', { className: 'snote-btn', onClick: cancelEdit }, '取消'),
+            editing.mode === 'new'
+              ? React.createElement('button', { className: 'snote-btn snote-btn-send', title: '只发送到输入框,不保存便签、不划线', onClick: sendNewOnly }, '发送到对话框')
+              : null,
             showSend
               ? React.createElement('button', { className: 'snote-btn snote-btn-send', onClick: saveAndSend }, '发送到对话框')
               : null,
@@ -814,7 +823,8 @@ return {
       '.snote-btn-danger:hover{background:rgba(220,38,38,.08)}',
       '.snote-btn-primary{background:var(--dsw-alias-state-business-primary,#e0a010);border-color:transparent;color:#fff}',
       '.snote-btn-primary:hover{filter:brightness(1.06)}',
-      '.snote-panel{position:fixed;top:10px;right:10px;bottom:10px;width:308px;z-index:55;display:flex;flex-direction:column;border-radius:12px;border:.5px solid var(--dsw-alias-border-l2,rgba(0,0,0,.12));background:var(--dsw-alias-bg-base,#fff);box-shadow:var(--dsw-elevation-prominent,0 12px 40px rgba(0,0,0,.22));overflow:hidden}',
+      '.snote-panel{position:fixed;top:0;right:0;bottom:0;width:328px;z-index:55;display:flex;flex-direction:column;border-left:.5px solid var(--dsw-alias-border-l3,rgba(0,0,0,.14));border-radius:0;background:var(--dsw-alias-bg-base,#fff);overflow:hidden;animation:snote-slide-in .18s ease}',
+      '@keyframes snote-slide-in{from{transform:translateX(26px);opacity:.35}to{transform:none;opacity:1}}',
       '.snote-panel-head{display:flex;align-items:center;gap:8px;padding:12px 12px 8px}',
       '.snote-panel-title{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary,#111)}',
       '.snote-panel-sub{font-size:11px;color:var(--dsw-alias-label-tertiary,#999)}',
