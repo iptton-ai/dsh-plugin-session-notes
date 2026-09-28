@@ -1,0 +1,19 @@
+# Profile bundle layer for dsh-session-notes.
+#
+# DSH only treats a dependency as a profile bundle when its package.json declares
+# `dsh.bundle.patch` (see @deepseek-ai/dsh-package-manifest / app-boot's
+# `bundlePatchFiles`). Without that declaration `dsh plugin add` installs the
+# package as a plain dependency and the plugin page refuses to manage it with
+# "declares no dsh.bundle".
+#
+# This file is the layer applied when the package is selected in the profile's
+# `dsh.profile.bundles` — which is what `dsh plugin --profile <name> add
+# dsh-session-notes` and the Web "Plugins" page do for you.
+#
+# The row `name` must resolve to this package: dsh-client-modules mounts a
+# package's browser half (its "./client" export) on the Loader row whose module
+# specifier resolves to that package, so a row pointing somewhere else would
+# load the host half without the UI.
+- insert:
+    - id: session-notes
+      name: 'dsh-session-notes'
