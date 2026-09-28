@@ -25,26 +25,42 @@ Highlight any sentence in your DeepSeek Harness (DSH) conversation, attach a sti
 
 Two forms are supported: **A. resident profile plugin**(常驻,重启后仍在,推荐)and **B. dynamic cordis package**(动态,免装即用,重启即失)。
 
-### A. Resident — web profile plugin
+### A. Resident — profile bundle (recommended)
+
+This package declares `dsh.bundle.patch` (→ [`cordis.patch.yml`](cordis.patch.yml)) in its `package.json`. That declaration is what makes DSH treat it as a manageable **profile bundle** rather than a plain dependency — without it, installation ends with *"this package declares no bundle, so it cannot be managed as a plugin"*.
+
+**CLI:**
+
+```bash
+# straight from GitHub
+dsh plugin --profile web add github:iptton-ai/dsh-plugin-session-notes
+
+# or from a local clone
+git clone https://github.com/iptton-ai/dsh-plugin-session-notes
+dsh plugin --profile web add /abs/path/to/dsh-plugin-session-notes
+```
+
+**GUI:** sidebar → **Plugins** → **Add plugin**, then paste `github:iptton-ai/dsh-plugin-session-notes`.
+
+Either way DSH installs the dependency, appends `dsh-session-notes` to the profile's `dsh.profile.bundles`, and applies the package's `cordis.patch.yml` as a bundle layer — which inserts the `session-notes` row. Restart `dsh web`. The host half serves `/session-notes/api/*`; the client half is picked up via the package's `dsh.client` declaration and bundled for every page load (UI survives refresh).
+
+<details>
+<summary>Manual equivalent (editing the profile yourself)</summary>
 
 1. Clone this repo anywhere on disk.
-2. Link it into your web profile and install:
+2. Add it as a dependency of the profile and install:
 
    ```bash
    cd ~/.dsh/profiles/web
-   # package.json → "dependencies": { "dsh-session-notes": "link:<abs path to this repo>" }
-   pnpm install
+   pnpm add link:/abs/path/to/dsh-plugin-session-notes
    ```
 
-3. Append to `~/.dsh/profiles/web/cordis.patch.yml`:
+3. Add `"dsh-session-notes"` to the `dsh.profile.bundles` array in that profile's `package.json`.
+4. Restart `dsh web`.
 
-   ```yaml
-   - insert:
-       - id: session-notes
-         name: 'dsh-session-notes'
-   ```
+Do **not** hand-insert the `session-notes` row into the profile's `cordis.patch.yml`: the bundle's own `cordis.patch.yml` already inserts it, so duplicating the insertion would register the row twice.
 
-4. Restart `dsh web`. The host half serves `/session-notes/api/*`; the client half is picked up via the package's `dsh.client` declaration and bundled for every page load (UI survives refresh).
+</details>
 
 ### B. Dynamic — cordis_define
 
@@ -92,6 +108,29 @@ The host half explicitly passes `sandboxPolicy: { mode: 'danger-full-access' }` 
 - 💾 **持久存储** —— 纯 JSON 落盘于 `~/.dsh/storages/session-notes/notes.json`,跨重启保留;fs 服务写入失败时自动降级 shell 通道,写队列失败隔离。
 
 ### 安装方法
+
+支持两种形态:**A. 常驻 profile 组合包**(重启后仍在,推荐)与 **B. 动态 Cordis 插件**(免安装、重启即失)。
+
+#### A. 常驻 —— 作为 profile 组合包安装(推荐)
+
+本包的 `package.json` 声明了 `dsh.bundle.patch`(→ [`cordis.patch.yml`](cordis.patch.yml))。DSH 正是凭这一声明把它当作可管理的**组合包**;缺了它,安装会以「这个包没有声明组合包,不能作为插件管理」结束。
+
+```bash
+# 直接从 GitHub 装
+dsh plugin --profile web add github:iptton-ai/dsh-plugin-session-notes
+
+# 或从本地克隆装
+git clone https://github.com/iptton-ai/dsh-plugin-session-notes
+dsh plugin --profile web add /abs/path/to/dsh-plugin-session-notes
+```
+
+界面上等价操作:左侧 **插件** → **添加插件**,粘贴 `github:iptton-ai/dsh-plugin-session-notes`。
+
+DSH 会把依赖装好、把 `dsh-session-notes` 追加进 profile 的 `dsh.profile.bundles`,并把本包自带的 `cordis.patch.yml` 作为组合包层应用(其中插入 `session-notes` 那一行)。重启 `dsh web` 即可。宿主半区提供 `/session-notes/api/*`,浏览器半区经包的 `dsh.client` 声明被打进每次页面加载的 bundle(刷新不丢 UI)。
+
+> 手动改 profile 也可以:把本仓库 `pnpm add link:<路径>` 进 profile,再把 `"dsh-session-notes"` 加进 `dsh.profile.bundles`。**不要**再手动往 profile 的 `cordis.patch.yml` 里插 `session-notes` 行 —— 组合包自带的 patch 已经插过一次,重复插入会注册两遍。
+
+#### B. 动态 —— cordis_define
 
 这是一个 **DSH 动态 Cordis 插件**,直接运行在当前 `dsh web` 进程里 —— 无需构建、无需 npm。
 
