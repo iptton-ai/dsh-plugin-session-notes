@@ -20,6 +20,10 @@ Highlight any sentence in your DeepSeek Harness (DSH) conversation, attach a sti
 - 👀 **View-first popup** — clicking a highlight opens the note read-only; editing is an explicit action.
 - 🔄 **Self-healing highlights** — MutationObserver + 5s reconciliation re-apply highlights after re-renders, virtualization, or pagination.
 - 💾 **Durable storage** — plain JSON at `~/.dsh/storages/session-notes/notes.json`; fs-service write with shell fallback, serialized queue.
+- 📌 **Status note** *(resident form)* — one active per workspace, **update = replace** (not append); rendered as the *Current* line atop the panel. See [design doc](docs/design-working-loop.md) (inspired by [project-working-loop](https://github.com/yeaa-labs/project-working-loop)).
+- ☑ **Task notes → new session** *(resident form)* — a task note carries `next` (next action), `doneWhen` (acceptance condition), and a done checkbox. **▶ 新会话** spawns a fresh session whose opening message is the task's entire worldview: task + creation-time three-layer capture (quote / containing message / the question that prompted it) + a spawn-time 30-min tail digest of the origin session + the workspace status snapshot + a "restate, then act; stop if background is insufficient" preamble. Hard cap 8000 chars with a fixed trim ladder.
+- ⏰ **Scheduled spawn** *(resident form)* — set `dueAt` (quick picks: tomorrow 9am / in 5 hours); default **auto-spawn** a new session at due time, or notify-only. One-shot latch with three-phase persistence (never double-spawns across restarts); done tasks never fire; missed auto tasks fire on next boot.
+- 🛡 **Origin-loss defense** *(resident form)* — the host polls `session/list` every 3 min: when a task's origin session is deleted, pending auto-spawns are **downgraded to notify** with a panel decision card (照常自动跑 / 取消定时 / 编辑); archived origins get a soft badge only. The opening message itself carries the stop-and-ask guard for races the poll missed. Tasks are never silently deleted — the creation-time capture survives session death.
 
 ## Install
 
@@ -106,6 +110,10 @@ The host half explicitly passes `sandboxPolicy: { mode: 'danger-full-access' }` 
 - 📤 **发送到对话框** —— 把便签(内容 + 引用原文)一键追加到当前输入框草稿,直接继续追问。
 - 🔄 **高亮自愈** —— MutationObserver + 5 秒对账,消息重渲染、翻页加载、虚拟化后划线自动恢复。
 - 💾 **持久存储** —— 纯 JSON 落盘于 `~/.dsh/storages/session-notes/notes.json`,跨重启保留;fs 服务写入失败时自动降级 shell 通道,写队列失败隔离。
+- 📌 **状态便签**(常驻形态)—— 每个目录一条活跃,**更新=替换而非追加**;渲染在面板顶部的「当前」状态行,一眼看清做到哪了。设计文档 [docs/design-working-loop.md](docs/design-working-loop.md)(灵感来自 [project-working-loop](https://github.com/yeaa-labs/project-working-loop))。
+- ☑ **任务便签 → 新会话**(常驻形态)—— 任务便签携带 `next`(下一步)、`doneWhen`(验收条件)与完成勾选框。**▶ 新会话**以任务为世界观开一个全新会话:开场消息 = 任务 + 创建时三层捕获(高亮原文/所在消息/当时的提问)+ spawn 时来源会话 30 分钟尾声摘要 + 工作台状态快照 + 「先复述再执行;背景不足就停下来问」的起手指示;总量 8K 硬顶、固定裁剪阶梯。
+- ⏰ **定时启动**(常驻形态)—— 设 `dueAt`(快捷:明早 9 点 / 5 小时后),到点默认**自动开新会话**,可选仅提醒;一次性闩锁 + 三段落盘,重启绝不双开;已勾完成的任务永不触发;错过的 auto 任务下次启动照常补射。
+- 🛡 **来源会话失守防线**(常驻形态)—— host 每 3 分钟轮询 `session/list`:来源会话被删时,未触发的 auto 任务**自动降级为提醒**并浮出决策卡(照常自动跑/取消定时/编辑);归档仅软提示。开场消息自带停止条款兜住轮询缝隙;任务永远不会被静默删除——创建时捕获不随会话消亡。
 
 ### 安装方法
 

@@ -108,6 +108,9 @@ return {
         if (!args || typeof args !== 'object') return fail('bad args')
         const notes = await readAll()
         const now = new Date().toISOString()
+        // 动态形态只透传 schema 字段(常驻形态 lib/index.js 才有调度/spawn/三层捕获;
+        // 见 docs/design-working-loop.md §8)。
+        const kind = ['note', 'status', 'task'].includes(args.kind) ? args.kind : 'note'
         const note = {
           id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
           sessionId: String(args.sessionId || ''),
@@ -115,8 +118,19 @@ return {
           workspaceTitle: String(args.workspaceTitle || ''),
           quote: String(args.quote || '').slice(0, 2000),
           note: String(args.note || '').slice(0, 4000),
+          kind,
+          origin: { sessionId: String(args.sessionId || ''), createdAt: now },
           createdAt: now,
           updatedAt: now,
+        }
+        if (kind === 'task') {
+          note.next = String(args.next || '').slice(0, 1000)
+          note.doneWhen = String(args.doneWhen || '').slice(0, 1000)
+          note.done = false
+          note.dueAt = (typeof args.dueAt === 'string' && Number.isFinite(Date.parse(args.dueAt))) ? args.dueAt : ''
+          note.dueAction = args.dueAction === 'notify' ? 'notify' : 'auto'
+          note.preset = String(args.preset || '').slice(0, 200)
+          note.spawnLog = []
         }
         notes.push(note)
         await persist()
